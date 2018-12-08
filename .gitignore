@@ -57,5 +57,5 @@ Mkfile.old
 dkms.conf
 
 tags
-
+cscopes*
 # End of https://www.gitignore.io/api/c
