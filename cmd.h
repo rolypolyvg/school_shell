@@ -31,7 +31,7 @@ struct pipecmd {
 void runcmd(struct cmd *cmd);
 int getcmd(char *buf, int nbuf);
 
-struct cmd* execmd(void);
+struct cmd* execcmd(void);
 struct cmd* redircmd(struct cmd *subcmd, char *file, int type);
 struct cmd* pipecmd(struct cmd *left, struct cmd *right);
 

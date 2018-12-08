@@ -1,15 +1,20 @@
+# 참조: https://codereview.stackexchange.com/questions/2547/makefile-dependency-generation/11109#11109
+CC = gcc
+SRCS = $(wildcard *.c)
+OBJS = $(SRCS:.c=.o)
+DEPS = $(SRCS:.c=.d)
+EXE = mysh.out
 
-mysh: sh.o parser.o cmd.o
-	gcc -o $@ $^
+$(EXE) : $(OBJS)
+	$(CC) -o $@ $^
 
-sh.o: sh.c cmd.h parser.h
-	gcc -c $^
+$(OBJS):%.o:%.c
+	$(CC) -MMD -c $<
 
-cmd.o: cmd.c cmd.h
-	gcc -c $^
-
-parser.o: parser.c cmd.h parser.h
-	gcc -c $^
+.PHONY: clean
 
 clean:
-	rm -f *.o mysh
+	-rm -f $(EXE) $(OBJS) $(DEPS)
+# - in front means to continue even error occur
+
+-include $(DEPS)
