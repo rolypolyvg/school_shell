@@ -15,6 +15,7 @@ runcmd(struct cmd *cmd)
   struct execcmd *ecmd;
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
+	int redir_fd;	// file descripter for I/O redirection
 
   if(cmd == 0)
     exit(0);
@@ -28,15 +29,20 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit(0);
-    fprintf(stderr, "exec not implemented\n");
     // Your code here ...
+		execvp(ecmd->argv[0], ecmd->argv);
     break;
 
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
-    fprintf(stderr, "redir not implemented\n");
     // Your code here ...
+		redir_fd = open(rcmd->file, rcmd->mode, 0644);	// open file for redirecting standard I/O
+		if (redir_fd == -1){	// file open error
+			perror("open");
+			exit(-1);
+		}
+		dup2(redir_fd, rcmd->fd);	// redirect standard I/O
     runcmd(rcmd->cmd);
     break;
 
