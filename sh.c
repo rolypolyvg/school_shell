@@ -7,8 +7,7 @@
 
 #include "cmd.h"
 #include "parser.h"
-
-int fork1(void);  // Fork but exits on failure.
+#include "helper.h"
 
 int
 main(void)
@@ -32,16 +31,3 @@ main(void)
   }
   exit(0);
 }
-
-int
-fork1(void)
-{
-  int pid;
-  
-  pid = fork();
-  if(pid == -1)
-    perror("fork");
-  return pid;
-}
-
-

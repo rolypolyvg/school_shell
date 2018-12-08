@@ -3,9 +3,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "cmd.h"
+#include "helper.h"
 
 // Execute cmd.  Never returns.
 void
@@ -16,6 +18,8 @@ runcmd(struct cmd *cmd)
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
 	int redir_fd;	// file descripter for I/O redirection
+	int pipe_fd[2];	// file descripter for pipe
+	int pipe_child_pid, pipe_child_status;	// for pipe command waitpid
 
   if(cmd == 0)
     exit(0);
@@ -48,8 +52,24 @@ runcmd(struct cmd *cmd)
 
   case '|':
     pcmd = (struct pipecmd*)cmd;
-    fprintf(stderr, "pipe not implemented\n");
     // Your code here ...
+		if (pipe(pipe_fd) == -1){	// make pipe
+			perror("pipe");
+			exit(-1);
+		}
+		switch(pipe_child_pid = fork1()){
+			case 0:	// child
+				close(pipe_fd[0]);	// close read end of pipe
+				dup2(pipe_fd[1], 1);	// redirect standard output to write end of pipe
+				runcmd(pcmd->left);
+				break;
+			default:	// parent
+				close(pipe_fd[1]);	// close write end of pipe
+				dup2(pipe_fd[0], 0);	// redirect standard input to read end of pipe
+				waitpid(pipe_child_pid, &pipe_child_status, 0);	// wait for the child to finish executing its command
+				runcmd(pcmd->right);
+				break;
+		}
     break;
   }    
   exit(1);
