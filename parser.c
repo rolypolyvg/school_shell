@@ -14,9 +14,7 @@ gettoken(char **ps, char *es, char **q, char **eq)
   char *s;
   int ret;
   
-  s = *ps;
-  while(s < es && strchr(whitespace, *s))
-    s++;
+  s = strip_leading_space(*ps, es);
   if(q)
     *q = s;
   ret = *s;
@@ -39,10 +37,22 @@ gettoken(char **ps, char *es, char **q, char **eq)
   if(eq)
     *eq = s;
   
-  while(s < es && strchr(whitespace, *s))
-    s++;
-  *ps = s;
+  *ps = strip_leading_space(s, es);
   return ret;
+}
+
+// remove leading space and return pointer to first none space
+// or es is reached 
+// if es is NULL strip until end of string
+char *strip_leading_space(char *s, char *es){
+	if (es == NULL)
+		while (*s != 0 && strchr(whitespace, *s))
+			s++;
+	else
+		while (s < es && strchr(whitespace, *s))
+			s++;
+
+	return s;
 }
 
 int
@@ -50,9 +60,7 @@ peek(char **ps, char *es, char *toks)
 {
   char *s;
   
-  s = *ps;
-  while(s < es && strchr(whitespace, *s))
-    s++;
+  s = strip_leading_space(*ps, es);
   *ps = s;
   return *s && strchr(toks, *s);
 }
