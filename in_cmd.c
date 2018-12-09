@@ -7,12 +7,15 @@
 #include "in_cmd.h"
 #include "parser.h"
 #include "helper.h"
+#include "history.h"
 
-void run_all_cmd(char *buf){
+void run_all_cmd(char*buf, struct sh*shell){
 	char *start = strip_leading_space(buf, NULL);
 
 	if (strncmp(start, "cd", 2) == 0){
 		run_cd(start+2);
+	}else if (strncmp(start, "history", 7) == 0){
+		run_history(shell);
 	}else
 		run_normal_cmd(start);
 
@@ -46,3 +49,15 @@ void run_cd(char *buf){
 	return;
 }
 
+void run_history(struct sh*shell){
+	struct hnode *cur;
+	struct hlist *tmp;
+
+	tmp = &shell->hl;
+	while(cur=traverse_hl(tmp), cur){
+		tmp = NULL;
+		printf("%d: %s\n", cur->nb, cur->cmd);
+	}
+
+	return;
+}
