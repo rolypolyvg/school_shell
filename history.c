@@ -76,6 +76,7 @@ void add_new_hl(struct hlist*hl, char *cmd){
 	if (hl->cur_sz == hl->max_sz){
 		old = hl->front;
 		hl->front->next->before = NULL;
+		hl->front = hl->front->next;
 		free_hnode(old);
 	}else
 		hl->cur_sz++;
