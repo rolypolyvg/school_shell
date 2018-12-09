@@ -11,14 +11,23 @@ main(void)
 {
   static char buf[100];
 
-  char *start, *st;
+  char *start, *end, *next;
 
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
   	// parse command by ; and run
-  	st = buf;
-	while (start = strtok(st, ";"), start != NULL){
-		st = NULL;
+
+	next = buf;
+	while (next){
+		start = next;
+		end = strchr(start, ';');
+		if (end == NULL)
+			next = NULL;
+		else{
+			next = end + 1;
+			*end = '\0';
+		}
+
 		run_all_cmd(start);
 	}
   }

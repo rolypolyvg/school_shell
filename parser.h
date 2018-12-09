@@ -3,6 +3,8 @@
 
 #include "cmd.h"
 
+extern char whitespace[];
+
 int gettoken(char **ps, char *es, char **q, char **eq);
 char *strip_leading_space(char *s, char *es);
 int peek(char **ps, char *es, char *toks);
