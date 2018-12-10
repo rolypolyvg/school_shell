@@ -32,11 +32,18 @@ runcmd(struct cmd *cmd)
 
   case ' ':
     ecmd = (struct execcmd*)cmd;
-    if(ecmd->argv[0] == 0)
-      exit(0);
 		// catch internal command
+		if(!strcmp(ecmd->argv[0], "cd")){
+			ecmd->argv[1][strlen(ecmd->argv[1]-1)] = '\0';
+			if (chdir(ecmd->argv[1]) < 0)
+				fprintf(stderr, "cannot cd to %s\n", (ecmd->argv[1]));
+		}
+		else if(!strcmp(ecmd->argv[0], "history")){
 
-		execvp(ecmd->argv[0], ecmd->argv);
+		}
+
+		if(execvp(ecmd->argv[0], ecmd->argv) == -1)
+			perror("exec");
     break;
 
   case '>':
@@ -90,6 +97,9 @@ void handle_cmd(struct cmd* cmd){
 	struct parenthcmd *parcmd;
 	struct ampersandcmd *ampcmd;
 
+	if(cmd == 0)
+    return;
+
 	switch(cmd->type){
 	default:
     fprintf(stderr, "unknown handle_cmd\n");
@@ -121,19 +131,24 @@ void handle_cmd(struct cmd* cmd){
 
 	case '&':
 		ampcmd = (struct ampersandcmd *)cmd;
-		if(fork1() == 0)
+		if(fork1() == 0){
 			handle_cmd(ampcmd->cur);
+			//exit(1);
+		}
 		handle_cmd(ampcmd->next);
 		// no wait! (let the command run in the background)
 		break;
 
 	case '(':
 		parcmd = (struct parenthcmd *)cmd;
-		if(fork1() == 0)
+		if(fork1() == 0){
 			handle_cmd(parcmd->cmd);	// handle the command inside the parentheses in a subshell
+			exit(1);
+		}
 		wait(&r);
 		break;
 	}
+	
 }
 
 int
