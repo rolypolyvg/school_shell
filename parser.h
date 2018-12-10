@@ -22,7 +22,7 @@ char*mkcopy(char *s, char *es);
 // list cmd = {pipe cmd[; or &]} or {pipe cmd[; or &] list cmd}
 // subshell = (list cmd)
 struct cmd *parsecmd(char *s);			// parse command from string s
-struct cmd *parselist(char**, char*);	// parse list cmd
+struct cmd *parselist(char**, char*);	// parse list cmd 
 struct cmd *parsepipe(char**, char*);	// parse pipe cmd
 struct cmd *parsesinglecmd(char**, char*);	// parse single cmd 
 struct cmd *parseparenth(char**, char*);	// parse subshell

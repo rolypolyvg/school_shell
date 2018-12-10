@@ -87,7 +87,7 @@ parsecmd(char *s)
   cmd = parselist(&s, es);
   peek(&s, es, "");
   if (s != es){
-    fprintf(stderr, "leftovers: %s\n", s);
+    fprintf(stderr, "unparsed leftover: %s\n", s);
     free_cmd(cmd);
     return NULL;
   }
@@ -138,6 +138,9 @@ parsepipe(char **ps, char *es)
 struct cmd* parsesinglecmd(char **ps, char *es){
   struct cmd *cmd;
 
+  // subshell has redir after subshell
+  // >a.txt (ls)  // invalid command
+  // (ls) > a.txt // valid command
   if (peek(ps, es, "(")){
     gettoken(ps, es, 0, 0);
     cmd = parseparenth(ps, es);
@@ -151,6 +154,7 @@ struct cmd* parsesinglecmd(char **ps, char *es){
 struct cmd* parseparenth(char **ps, char *es){
   struct cmd *cmd;
 
+  // handled '(' from parseinglecmd
   cmd = parselist(ps, es);
   if (peek(ps, es, ")")){
     gettoken(ps, es, 0, 0);
@@ -221,6 +225,8 @@ parseexec(char **ps, char *es)
   }
   cmd->argv[argc] = 0;
 
+  // if exec command has no redirection and has no argv
+  // this is empty command
   if (ret->type == ' ' && argc == 0){
     free_cmd(ret);
     return NULL;

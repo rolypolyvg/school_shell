@@ -7,6 +7,8 @@ struct hnode* new_hnode(char *cmd, int nb){
 
 	ret = malloc(sizeof(*ret));
 	ret->next = ret->before = NULL;
+
+	// copying command
 	ret->cmd = malloc((strlen(cmd)+1)*sizeof(char));
 	strcpy(ret->cmd, cmd);
 	ret->nb = nb;
@@ -63,16 +65,19 @@ void add_new_hl(struct hlist*hl, char *cmd){
 		add = new_hnode(cmd, 1);
 		hl->front = hl->back = add;
 	}else{
+		// setting command number
 		nb = hl->back->nb+1;
 		if (nb > 10000)
 			nb = 1;
 
+		// adding new hnode to list
 		add = new_hnode(cmd, nb);
 		hl->back->next = add;
 		add->before = hl->back;
 		hl->back = add;
 	}
 
+	// handling when history current size is at max size
 	if (hl->cur_sz == hl->max_sz){
 		old = hl->front;
 		hl->front->next->before = NULL;
