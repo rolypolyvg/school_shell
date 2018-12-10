@@ -46,6 +46,7 @@ struct parenthcmd{
 };
 
 void runcmd(struct cmd *cmd);
+void handle_cmd(struct cmd* cmd);
 int getcmd(char *buf, int nbuf);
 
 struct cmd* execcmd(void);

@@ -17,9 +17,10 @@ runcmd(struct cmd *cmd)
   struct execcmd *ecmd;
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
+	struct ampersandcmd *ampcmd;
 	int redir_fd;	// file descripter for I/O redirection
 	int pipe_fd[2];	// file descripter for pipe
-	int pipe_child_pid, pipe_child_status;	// for pipe command waitpid
+	int left_pid, left_child_status, right_pid, right_child_status;	// for pipe command waitpid
 
   if(cmd == 0)
     exit(0);
@@ -33,14 +34,14 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit(0);
-    // Your code here ...
+		// catch internal command
+
 		execvp(ecmd->argv[0], ecmd->argv);
     break;
 
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
-    // Your code here ...
 		redir_fd = open(rcmd->file, rcmd->mode, 0644);	// open file for redirecting standard I/O
 		if (redir_fd == -1){	// file open error
 			perror("open");
@@ -52,27 +53,87 @@ runcmd(struct cmd *cmd)
 
   case '|':
     pcmd = (struct pipecmd*)cmd;
-    // Your code here ...
 		if (pipe(pipe_fd) == -1){	// make pipe
 			perror("pipe");
 			exit(-1);
 		}
-		switch(pipe_child_pid = fork1()){
-			case 0:	// child
-				close(pipe_fd[0]);	// close read end of pipe
-				dup2(pipe_fd[1], 1);	// redirect standard output to write end of pipe
-				runcmd(pcmd->left);
-				break;
-			default:	// parent
-				close(pipe_fd[1]);	// close write end of pipe
-				dup2(pipe_fd[0], 0);	// redirect standard input to read end of pipe
-				waitpid(pipe_child_pid, &pipe_child_status, 0);	// wait for the child to finish executing its command
-				runcmd(pcmd->right);
-				break;
+		if((left_pid = fork1()) == 0){	// left cmd
+			close(pipe_fd[0]);	// close read end of pipe
+			dup2(pipe_fd[1], 1);	// redirect standard output to write end of pipe
+			handle_cmd(pcmd->left);
+		}
+		else if((right_pid = fork1()) == 0){	// right cmd
+			close(pipe_fd[1]);	// close write end of pipe
+			dup2(pipe_fd[0], 0);	// redirect standard input to read end of pipe
+			handle_cmd(pcmd->right);
+		}
+		else{
+			// wait for left & right
+			waitpid(left_pid, &left_child_status, 0);
+			waitpid(right_pid, &right_child_status, 0);
 		}
     break;
+
+	case '&':
+	case ';':
+		handle_cmd(cmd);
+		break;
   }    
   exit(1);
+}
+
+/* handle commands before actually runnning them */
+void handle_cmd(struct cmd* cmd){
+	int r;
+	struct execcmd *ecmd;
+	struct semicmd *semcmd;
+	struct parenthcmd *parcmd;
+	struct ampersandcmd *ampcmd;
+
+	switch(cmd->type){
+	default:
+    fprintf(stderr, "unknown handle_cmd\n");
+    exit(-1);
+
+	case ' ':
+		ecmd = (struct execcmd *)cmd;
+		// internal command
+		
+		// regular exec
+		if(fork1() == 0)
+			runcmd(cmd);
+		wait(&r);
+		break;
+
+	case '>':
+  case '<':
+	case '|':
+		if(fork1() == 0)
+			runcmd(cmd);
+		wait(&r);
+		break;
+
+	case ';':	// handle the list of commands in the current shell
+		semcmd = (struct semicmd *)cmd;
+		handle_cmd(semcmd->cur);
+		handle_cmd(semcmd->next);
+		break;
+
+	case '&':
+		ampcmd = (struct ampersandcmd *)cmd;
+		if(fork1() == 0)
+			handle_cmd(ampcmd->cur);
+		handle_cmd(ampcmd->next);
+		// no wait! (let the command run in the background)
+		break;
+
+	case '(':
+		parcmd = (struct parenthcmd *)cmd;
+		if(fork1() == 0)
+			handle_cmd(parcmd->cmd);	// handle the command inside the parentheses in a subshell
+		wait(&r);
+		break;
+	}
 }
 
 int
