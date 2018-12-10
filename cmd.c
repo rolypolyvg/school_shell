@@ -118,8 +118,9 @@ void handle_cmd(struct cmd* cmd){
 	case '>':
   case '<':
 	case '|':
-		if(fork1() == 0)
+		if(fork1() == 0){
 			runcmd(cmd);
+		}
 		wait(&r);
 		break;
 
@@ -133,7 +134,7 @@ void handle_cmd(struct cmd* cmd){
 		ampcmd = (struct ampersandcmd *)cmd;
 		if(fork1() == 0){
 			handle_cmd(ampcmd->cur);
-			//exit(1);
+			exit(1);
 		}
 		handle_cmd(ampcmd->next);
 		// no wait! (let the command run in the background)
