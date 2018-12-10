@@ -7,7 +7,8 @@
 // typically casts the *cmd to some specific cmd type.
 struct cmd {
   int type;          //  ' ' (exec), | (pipe), '<' or '>' for redirection
-};
+};                   //  ';' (semicolon) run more command, '&' (ampersand) run background
+                     //  '(' (parenthsis) subshell
 
 struct execcmd {
   int type;              // ' '
@@ -30,24 +31,25 @@ struct pipecmd {
 
 struct semicmd{
   int type;         // ;
-  struct cmd *cur;
-  struct cmd *next;
+  struct cmd *cur;  // command left of ;
+  struct cmd *next; // command right of ; may be NULL if there is no command
 };
 
 struct ampersandcmd{
   int type;         // &
-  struct cmd *cur;
-  struct cmd *next;
+  struct cmd *cur;  // command left of &
+  struct cmd *next; // command right of & may be NULL if there is no command
 };
 
 struct parenthcmd{
   int type;         // (
-  struct cmd *cmd;
+  struct cmd *cmd;  // command inside subshell
 };
 
 void runcmd(struct cmd *cmd);
 int getcmd(char *buf, int nbuf);
 
+// make commands
 struct cmd* execcmd(void);
 struct cmd* redircmd(struct cmd *subcmd, char *file, int type);
 struct cmd* pipecmd(struct cmd *left, struct cmd *right);
@@ -55,6 +57,7 @@ struct cmd* semicmd(struct cmd *cur, struct cmd *next);
 struct cmd* ampersandcmd(struct cmd *cur, struct cmd*next);
 struct cmd* parenthcmd(struct cmd *cmd);
 
+// free command recursive starting from cmd
 void free_cmd(struct cmd *cmd);
 
 #endif
