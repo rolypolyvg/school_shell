@@ -33,6 +33,8 @@ main(void)
 	cmd = parsecmd(shell.buf);
 
 	print_cmd(cmd);
+
+	free_cmd(cmd);
   }
 
   clean_hl(&shell.hl);
@@ -44,7 +46,7 @@ void print_cmd(struct cmd* cmd){
 	struct redircmd *rcmd;
 	struct pipecmd *pcmd;
 	struct semicmd *scmd;
-	struct andptcmd *acmd;
+	struct ampersandcmd *acmd;
 	struct parenthcmd *ptcmd;
 	char **s;
 
@@ -76,8 +78,8 @@ void print_cmd(struct cmd* cmd){
 		printf("next\n");
 		print_cmd(scmd->next);
 	}else if (cmd->type == '&'){
-		acmd = (struct andptcmd *) cmd;
-		printf("andpercent\n");
+		acmd = (struct ampersandcmd *) cmd;
+		printf("ampersand\n");
 		printf("cur\n");
 		print_cmd(acmd->cur);
 		printf("next\n");

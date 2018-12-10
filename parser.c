@@ -68,6 +68,9 @@ char
 {
   int n = es - s;
   char *c = malloc(n+1);
+
+  // current parser is done by shell
+  // this will kill shell change it
   assert(c);
   strncpy(c, s, n);
   c[n] = 0;
@@ -85,6 +88,7 @@ parsecmd(char *s)
   peek(&s, es, "");
   if (s != es){
     fprintf(stderr, "leftovers: %s\n", s);
+    free_cmd(cmd);
     return NULL;
   }
 
@@ -92,15 +96,20 @@ parsecmd(char *s)
 }
 
 struct cmd* parselist(char **ps, char *es){
-  struct cmd *cmd;
+  struct cmd *cmd, *tmp;
 
   cmd = parsepipe(ps, es);
+  if (!cmd)
+    return NULL;
+
   if (peek(ps, es, "&")){
     gettoken(ps, es, 0, 0);
-    cmd = andptcmd(cmd, parselist(ps, es));
+    tmp = parselist(ps, es);
+    cmd = ampersandcmd(cmd, tmp);
   }else if (peek(ps, es, ";")){
     gettoken(ps, es, 0, 0);
-    cmd = semicmd(cmd, parselist(ps, es));
+    tmp = parselist(ps, es);
+    cmd = semicmd(cmd, tmp);
   }
 
   return cmd;
@@ -109,12 +118,19 @@ struct cmd* parselist(char **ps, char *es){
 struct cmd*
 parsepipe(char **ps, char *es)
 {
-  struct cmd *cmd;
+  struct cmd *cmd, *tmp;
 
   cmd = parsesinglecmd(ps, es);
+  if (!cmd)
+    return NULL;
+
   if(peek(ps, es, "|")){
     gettoken(ps, es, 0, 0);
-    cmd = pipecmd(cmd, parsepipe(ps, es));
+    tmp = parsepipe(ps, es);
+    if (!tmp)
+      return NULL;
+
+    cmd = pipecmd(cmd, tmp);
   }
   return cmd;
 }
@@ -141,6 +157,7 @@ struct cmd* parseparenth(char **ps, char *es){
     cmd = parenthcmd(cmd);
   }else{
     fprintf(stderr, "missing )\n");
+    free_cmd(cmd);
     return NULL;
   }
 
@@ -157,7 +174,8 @@ parseredirs(struct cmd *cmd, char **ps, char *es)
     tok = gettoken(ps, es, 0, 0);
     if(gettoken(ps, es, &q, &eq) != 'a') {
       fprintf(stderr, "missing file for redirection\n");
-      exit(-1);
+      free_cmd(cmd);
+      return NULL;
     }
     switch(tok){
     case '<':
@@ -189,20 +207,24 @@ parseexec(char **ps, char *es)
       break;
     if(tok != 'a') {
       fprintf(stderr, "syntax error\n");
-      exit(-1);
+      free_cmd(ret);
+      return NULL;
     }
     cmd->argv[argc] = mkcopy(q, eq);
     argc++;
     if(argc >= MAXARGS) {
       fprintf(stderr, "too many args\n");
-      exit(-1);
+      free_cmd(ret);
+      return NULL;
     }
     ret = parseredirs(ret, ps, es);
   }
   cmd->argv[argc] = 0;
 
-  if (ret->type == ' ' && argc == 0)
-    ;
+  if (ret->type == ' ' && argc == 0){
+    free_cmd(ret);
+    return NULL;
+  }
 
   return ret;
 }

@@ -34,7 +34,7 @@ struct semicmd{
   struct cmd *next;
 };
 
-struct andptcmd{
+struct ampersandcmd{
   int type;         // &
   struct cmd *cur;
   struct cmd *next;
@@ -52,7 +52,9 @@ struct cmd* execcmd(void);
 struct cmd* redircmd(struct cmd *subcmd, char *file, int type);
 struct cmd* pipecmd(struct cmd *left, struct cmd *right);
 struct cmd* semicmd(struct cmd *cur, struct cmd *next);
-struct cmd* andptcmd(struct cmd *cur, struct cmd*next);
+struct cmd* ampersandcmd(struct cmd *cur, struct cmd*next);
 struct cmd* parenthcmd(struct cmd *cmd);
+
+void free_cmd(struct cmd *cmd);
 
 #endif

@@ -139,8 +139,8 @@ struct cmd* semicmd(struct cmd *cur, struct cmd *next){
 }
 
 
-struct cmd* andptcmd(struct cmd *cur, struct cmd*next){
-  struct andptcmd *cmd;
+struct cmd* ampersandcmd(struct cmd *cur, struct cmd*next){
+  struct ampersandcmd *cmd;
 
   cmd = malloc(sizeof(*cmd));
   memset(cmd, 0, sizeof(*cmd));
@@ -158,5 +158,54 @@ struct cmd* parenthcmd(struct cmd *cmd){
   rcmd->type = '(';
   rcmd->cmd = cmd;
   return (struct cmd*) rcmd;
+}
+
+void free_cmd(struct cmd *cmd){
+  struct execcmd *ecmd;
+  struct redircmd *rcmd;
+  struct pipecmd *pcmd;
+  struct semicmd *scmd;
+  struct ampersandcmd *acmd;
+  struct parenthcmd *ptcmd;
+  char **s;
+
+  if (cmd == NULL)
+    ;
+  else if (cmd->type == ' '){
+    ecmd = (struct execcmd*) cmd;
+    for (s=ecmd->argv; *s; s++)
+      free(*s);
+
+    free(ecmd);
+  }else if (cmd->type == '<' || cmd->type == '>'){
+    rcmd = (struct redircmd *) cmd;
+    free_cmd(rcmd->cmd);
+    free(rcmd->file);
+    free(rcmd);
+  }else if (cmd->type == '|'){
+    pcmd = (struct pipecmd *) cmd;
+    free_cmd(pcmd->left);
+    free_cmd(pcmd->right);
+    free(pcmd);
+  }else if (cmd->type == ';'){
+    scmd = (struct semicmd *) cmd;
+    free_cmd(scmd->cur);
+    free_cmd(scmd->next);
+    free(scmd);
+  }else if (cmd->type == '&'){
+    acmd = (struct ampersandcmd *) cmd;
+    free_cmd(acmd->cur);
+    free_cmd(acmd->next);
+    free(acmd);
+  }else if (cmd->type == '('){
+    ptcmd = (struct parenthcmd *) cmd;
+    free_cmd(ptcmd->cmd);
+    free(ptcmd);
+  }else{
+    printf("wrong\n");
+    exit(1);
+  }
+
+  return;
 }
 
