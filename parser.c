@@ -6,7 +6,7 @@
 #include "cmd.h"
 
 char whitespace[] = " \t\r\n\v";
-char symbols[] = "<|>";
+char symbols[] = "|<>()&;";
 
 int
 gettoken(char **ps, char *es, char **q, char **eq)
@@ -18,22 +18,17 @@ gettoken(char **ps, char *es, char **q, char **eq)
   if(q)
     *q = s;
   ret = *s;
-  switch(*s){
-  case 0:
-    break;
-  case '|':
-  case '<':
+
+  if (*s == 0)
+      ;
+  else if (strchr(symbols, *s))
     s++;
-    break;
-  case '>':
-    s++;
-    break;
-  default:
+  else{
     ret = 'a';
     while(s < es && !strchr(whitespace, *s) && !strchr(symbols, *s))
       s++;
-    break;
   }
+ 
   if(eq)
     *eq = s;
   
@@ -86,20 +81,28 @@ parsecmd(char *s)
   struct cmd *cmd;
 
   es = s + strlen(s);
-  cmd = parseline(&s, es);
+  cmd = parselist(&s, es);
   peek(&s, es, "");
-  if(s != es){
+  if (s != es){
     fprintf(stderr, "leftovers: %s\n", s);
-    exit(-1);
+    return NULL;
   }
+
   return cmd;
 }
 
-struct cmd*
-parseline(char **ps, char *es)
-{
+struct cmd* parselist(char **ps, char *es){
   struct cmd *cmd;
+
   cmd = parsepipe(ps, es);
+  if (peek(ps, es, "&")){
+    gettoken(ps, es, 0, 0);
+    cmd = andptcmd(cmd, parselist(ps, es));
+  }else if (peek(ps, es, ";")){
+    gettoken(ps, es, 0, 0);
+    cmd = semicmd(cmd, parselist(ps, es));
+  }
+
   return cmd;
 }
 
@@ -108,11 +111,39 @@ parsepipe(char **ps, char *es)
 {
   struct cmd *cmd;
 
-  cmd = parseexec(ps, es);
+  cmd = parsesinglecmd(ps, es);
   if(peek(ps, es, "|")){
     gettoken(ps, es, 0, 0);
     cmd = pipecmd(cmd, parsepipe(ps, es));
   }
+  return cmd;
+}
+
+struct cmd* parsesinglecmd(char **ps, char *es){
+  struct cmd *cmd;
+
+  if (peek(ps, es, "(")){
+    gettoken(ps, es, 0, 0);
+    cmd = parseparenth(ps, es);
+    cmd = parseredirs(cmd, ps, es);
+  }else
+    cmd = parseexec(ps, es);
+
+  return cmd;
+}
+
+struct cmd* parseparenth(char **ps, char *es){
+  struct cmd *cmd;
+
+  cmd = parselist(ps, es);
+  if (peek(ps, es, ")")){
+    gettoken(ps, es, 0, 0);
+    cmd = parenthcmd(cmd);
+  }else{
+    fprintf(stderr, "missing )\n");
+    return NULL;
+  }
+
   return cmd;
 }
 
@@ -153,7 +184,7 @@ parseexec(char **ps, char *es)
 
   argc = 0;
   ret = parseredirs(ret, ps, es);
-  while(!peek(ps, es, "|")){
+  while(!peek(ps, es, "|;&)")){
     if((tok=gettoken(ps, es, &q, &eq)) == 0)
       break;
     if(tok != 'a') {
@@ -169,5 +200,9 @@ parseexec(char **ps, char *es)
     ret = parseredirs(ret, ps, es);
   }
   cmd->argv[argc] = 0;
+
+  if (ret->type == ' ' && argc == 0)
+    ;
+
   return ret;
 }

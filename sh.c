@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "sh.h"
 #include "cmd.h"
@@ -8,11 +9,14 @@
 #include "in_cmd.h"
 #include "history.h"
 
+void print_cmd(struct cmd* cmd);
+
 int
 main(void)
 {
 	struct sh shell;
-  char *start, *end, *next, *tmp;
+  	char *start, *end, *next, *tmp;
+  	struct cmd *cmd;
 
 	init_hl(&shell.hl, 10);
 
@@ -26,21 +30,67 @@ main(void)
   	add_new_hl(&shell.hl, shell.buf);
 
   	// parse command by ; and run
-	next = shell.buf;
-	while (next){
-		start = next;
-		end = strchr(start, ';');
-		if (end == NULL)
-			next = NULL;
-		else{
-			next = end + 1;
-			*end = '\0';
-		}
+	cmd = parsecmd(shell.buf);
 
-		run_all_cmd(start, &shell);
-	}
+	print_cmd(cmd);
   }
 
   clean_hl(&shell.hl);
   exit(0);
 }
+
+void print_cmd(struct cmd* cmd){
+	struct execcmd *ecmd;
+	struct redircmd *rcmd;
+	struct pipecmd *pcmd;
+	struct semicmd *scmd;
+	struct andptcmd *acmd;
+	struct parenthcmd *ptcmd;
+	char **s;
+
+	if (cmd == NULL)
+		printf("NULL\n");
+	else if (cmd->type == ' '){
+		ecmd = (struct execcmd*) cmd;
+		printf("execcmd: ");
+		for (s = ecmd->argv; *s != 0; s++)
+			printf("%s ", *s);
+		printf("\n");
+	}else if (cmd->type == '<' || cmd->type == '>'){
+		rcmd = (struct redircmd *) cmd;
+		printf("redir: ");
+		printf("%c %s\n", rcmd->type, rcmd->file);
+		print_cmd(rcmd->cmd);
+	}else if (cmd->type == '|'){
+		pcmd = (struct pipecmd *) cmd;
+		printf("pipe\n");
+		printf("left\n");
+		print_cmd(pcmd->left);
+		printf("right\n");
+		print_cmd(pcmd->right);
+	}else if (cmd->type == ';'){
+		scmd = (struct semicmd *) cmd;
+		printf("semicolon\n");
+		printf("cur\n");
+		print_cmd(scmd->cur);
+		printf("next\n");
+		print_cmd(scmd->next);
+	}else if (cmd->type == '&'){
+		acmd = (struct andptcmd *) cmd;
+		printf("andpercent\n");
+		printf("cur\n");
+		print_cmd(acmd->cur);
+		printf("next\n");
+		print_cmd(acmd->next);
+	}else if (cmd->type == '('){
+		ptcmd = (struct parenthcmd *) cmd;
+		printf("parenthesis\n");
+		print_cmd(ptcmd->cmd);
+	}else{
+		printf("wrong\n");
+		exit(1);
+	}
+
+	return;
+}
+

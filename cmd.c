@@ -127,3 +127,36 @@ pipecmd(struct cmd *left, struct cmd *right)
   return (struct cmd*)cmd;
 }
 
+struct cmd* semicmd(struct cmd *cur, struct cmd *next){
+  struct semicmd *cmd;
+
+  cmd = malloc(sizeof(*cmd));
+  memset(cmd, 0, sizeof(*cmd));
+  cmd->type = ';';
+  cmd->cur = cur;
+  cmd->next = next;
+  return (struct cmd*)cmd;
+}
+
+
+struct cmd* andptcmd(struct cmd *cur, struct cmd*next){
+  struct andptcmd *cmd;
+
+  cmd = malloc(sizeof(*cmd));
+  memset(cmd, 0, sizeof(*cmd));
+  cmd->type = '&';
+  cmd->cur = cur;
+  cmd->next = next;
+  return (struct cmd*)cmd;
+}
+
+struct cmd* parenthcmd(struct cmd *cmd){
+  struct parenthcmd *rcmd;
+
+  rcmd = malloc(sizeof(*rcmd));
+  memset(rcmd, 0, sizeof(*rcmd));
+  rcmd->type = '(';
+  rcmd->cmd = cmd;
+  return (struct cmd*) rcmd;
+}
+

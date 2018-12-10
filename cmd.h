@@ -28,11 +28,31 @@ struct pipecmd {
   struct cmd *right; // right side of pipe
 };
 
+struct semicmd{
+  int type;         // ;
+  struct cmd *cur;
+  struct cmd *next;
+};
+
+struct andptcmd{
+  int type;         // &
+  struct cmd *cur;
+  struct cmd *next;
+};
+
+struct parenthcmd{
+  int type;         // (
+  struct cmd *cmd;
+};
+
 void runcmd(struct cmd *cmd);
 int getcmd(char *buf, int nbuf);
 
 struct cmd* execcmd(void);
 struct cmd* redircmd(struct cmd *subcmd, char *file, int type);
 struct cmd* pipecmd(struct cmd *left, struct cmd *right);
+struct cmd* semicmd(struct cmd *cur, struct cmd *next);
+struct cmd* andptcmd(struct cmd *cur, struct cmd*next);
+struct cmd* parenthcmd(struct cmd *cmd);
 
 #endif
