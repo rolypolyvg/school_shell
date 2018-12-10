@@ -67,15 +67,17 @@ runcmd(struct cmd *cmd)
 		if((left_pid = fork1()) == 0){	// left cmd
 			close(pipe_fd[0]);	// close read end of pipe
 			dup2(pipe_fd[1], 1);	// redirect standard output to write end of pipe
-			handle_cmd(pcmd->left);
+			runcmd(pcmd->left);
 		}
 		else if((right_pid = fork1()) == 0){	// right cmd
 			close(pipe_fd[1]);	// close write end of pipe
 			dup2(pipe_fd[0], 0);	// redirect standard input to read end of pipe
-			handle_cmd(pcmd->right);
+			runcmd(pcmd->right);
 		}
 		else{
 			// wait for left & right
+      close(pipe_fd[0]);
+      close(pipe_fd[1]);
 			waitpid(left_pid, &left_child_status, 0);
 			waitpid(right_pid, &right_child_status, 0);
 		}
@@ -120,6 +122,7 @@ void handle_cmd(struct cmd* cmd){
 	case '|':
 		if(fork1() == 0){
 			runcmd(cmd);
+      exit(1);
 		}
 		wait(&r);
 		break;
