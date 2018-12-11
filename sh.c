@@ -10,6 +10,7 @@
 #include "history.h"
 
 void print_cmd(struct cmd* cmd);
+void handle_cmd(struct cmd* cmd);
 
 int
 main(void)
@@ -32,7 +33,10 @@ main(void)
   	// parse command by ; and run
 	cmd = parsecmd(shell.buf);
 
+#ifdef DEBUG
 	print_cmd(cmd);
+#endif
+	handle_cmd(cmd);
 
 	free_cmd(cmd);
   }
@@ -41,6 +45,7 @@ main(void)
   exit(0);
 }
 
+/* for debugging */
 void print_cmd(struct cmd* cmd){
 	struct execcmd *ecmd;
 	struct redircmd *rcmd;
