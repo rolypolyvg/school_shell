@@ -70,12 +70,12 @@ runcmd(struct cmd *cmd)
 			perror("pipe");
 			exit(-1);
 		}
-		if((left_pid = fork1()) == 0){	// left cmd
+		if((left_pid = myfork()) == 0){	// left cmd
 			close(pipe_fd[0]);	// close read end of pipe
 			dup2(pipe_fd[1], 1);	// redirect standard output to write end of pipe
 			runcmd(pcmd->left);
 		}
-		else if((right_pid = fork1()) == 0){	// right cmd
+		else if((right_pid = myfork()) == 0){	// right cmd
 			close(pipe_fd[1]);	// close write end of pipe
 			dup2(pipe_fd[0], 0);	// redirect standard input to read end of pipe
 			runcmd(pcmd->right);
@@ -122,7 +122,7 @@ void handle_cmd(struct cmd* cmd){
         runcmd(cmd);
     }else{
   		// regular exec
-  		if(fork1() == 0)
+  		if(myfork() == 0)
   			runcmd(cmd);
   		wait(&r);
     }
@@ -131,7 +131,7 @@ void handle_cmd(struct cmd* cmd){
 	case '>':
   case '<':
 	case '|':
-		if(fork1() == 0){
+		if(myfork() == 0){
 			runcmd(cmd);
       exit(1);
 		}
@@ -146,7 +146,7 @@ void handle_cmd(struct cmd* cmd){
 
 	case '&':
 		ampcmd = (struct ampersandcmd *)cmd;
-		if(fork1() == 0){
+		if(myfork() == 0){
 			handle_cmd(ampcmd->cur);
 			exit(1);
 		}else{
@@ -157,7 +157,7 @@ void handle_cmd(struct cmd* cmd){
 
 	case '(':
 		parcmd = (struct parenthcmd *)cmd;
-		if(fork1() == 0){
+		if(myfork() == 0){
 			handle_cmd(parcmd->cmd);	// handle the command inside the parentheses in a subshell
 			exit(1);
 		}

@@ -5,7 +5,7 @@
 #include <signal.h>
 
 int
-fork1(void)
+myfork(void)
 {
   int pid;
   
