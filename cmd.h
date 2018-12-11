@@ -59,6 +59,7 @@ struct cmd* ampersandcmd(struct cmd *cur, struct cmd*next);
 struct cmd* parenthcmd(struct cmd *cmd);
 
 // free command recursive starting from cmd
+void remake_cmd(int *index, char *buf, struct cmd *cmd);
 void free_cmd(struct cmd *cmd);
 
 #endif

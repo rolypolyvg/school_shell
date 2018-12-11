@@ -149,8 +149,9 @@ void handle_cmd(struct cmd* cmd){
 		if(fork1() == 0){
 			handle_cmd(ampcmd->cur);
 			exit(1);
-		}
-		handle_cmd(ampcmd->next);
+		}else{
+		  handle_cmd(ampcmd->next);
+    }
 		// no wait! (let the command run in the background)
 		break;
 
@@ -250,6 +251,69 @@ struct cmd* parenthcmd(struct cmd *cmd){
   rcmd->type = '(';
   rcmd->cmd = cmd;
   return (struct cmd*) rcmd;
+}
+
+void remake_cmd(int *index, char *buf, struct cmd *cmd){
+  struct execcmd *ecmd;
+  struct redircmd *rcmd;
+  struct pipecmd *pcmd;
+  struct semicmd *scmd;
+  struct ampersandcmd *acmd;
+  struct parenthcmd *ptcmd;
+  char **s;
+
+  if (cmd == NULL)
+    return;
+  else if (cmd->type == ' '){
+    ecmd = (struct execcmd*) cmd;
+    for (s=ecmd->argv; *s; s++){
+      strcpy(buf+*index, *s);
+      *index += strlen(*s);
+    }
+
+    return;
+  }else if (cmd->type == '<' || cmd->type == '>'){
+    rcmd = (struct redircmd *) cmd;
+
+    remake_cmd(index, buf, rcmd->cmd);
+    buf[*index++] = ' ';
+    buf[*index++] = cmd->type;
+    buf[*index++] = ' ';
+    strcpy(buf+*index, rcmd->file);
+    *index += strlen(rcmd->file);
+
+    return;
+  }else if (cmd->type == '|'){
+    pcmd = (struct pipecmd *) cmd;
+    remake_cmd(index, buf, pcmd->left);
+    buf[*index++] = ' ';
+    buf[*index++] = cmd->type;
+    buf[*index++] = ' ';
+    remake_cmd(index, buf, pcmd->right);
+    return;
+  }else if (cmd->type == ';'){
+    scmd = (struct semicmd *) cmd;
+    remake_cmd(index, buf, scmd->cur);
+    buf[*index++] = cmd->type;
+    remake_cmd(index, buf, scmd->next);
+    return;
+  }else if (cmd->type == '&'){
+    acmd = (struct ampersandcmd *) cmd;
+    remake_cmd(index, buf, acmd->cur);
+    buf[*index++] = cmd->type;
+    remake_cmd(index, buf, acmd->next);
+    return;
+  }else if (cmd->type == '('){
+    ptcmd = (struct parenthcmd *) cmd;
+    buf[*index++] = '(';
+    remake_cmd(index, buf, ptcmd->cmd);
+    buf[*index++] = ')';
+  }else{
+    printf("wrong\n");
+    exit(1);
+  }
+
+  return;
 }
 
 void free_cmd(struct cmd *cmd){
