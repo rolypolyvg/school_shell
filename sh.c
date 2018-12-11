@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
 
 #include "sh.h"
 #include "cmd.h"
@@ -16,10 +18,11 @@ struct sh shell;
 int
 main(void)
 {
-  	char *start, *end, *next, *tmp;
-  	struct cmd *cmd;
+  char *start, *end, *next, *tmp;
+  struct cmd *cmd;
 
 	init_hl(&shell.hl, 10);
+	init_block_signals();	// blocking signals
 
   // Read and run input commands.
   while(getcmd(shell.buf, sizeof(shell.buf)) >= 0){
@@ -43,6 +46,16 @@ main(void)
 
   clean_hl(&shell.hl);
   exit(0);
+}
+
+// block signals when starting shell
+void init_block_signals(void){
+	sigset_t ss;	// signal set to block
+	
+	sigemptyset(&ss);
+	sigaddset(&ss, SIGINT);
+	sigaddset(&ss, SIGQUIT);
+	sigprocmask(SIG_BLOCK, &ss, (sigset_t*)NULL);
 }
 
 /* for debugging */
