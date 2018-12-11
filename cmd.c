@@ -7,7 +7,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "cmd.h"
+#include "sh.h"
 #include "helper.h"
+
+extern struct sh shell;
 
 // Execute cmd.  Never returns.
 void
@@ -21,6 +24,8 @@ runcmd(struct cmd *cmd)
 	int redir_fd;	// file descripter for I/O redirection
 	int pipe_fd[2];	// file descripter for pipe
 	int left_pid, left_child_status, right_pid, right_child_status;	// for pipe command waitpid
+  struct hnode *cur;
+  struct hlist *tmp;
 
   if(cmd == 0)
     exit(0);
@@ -34,15 +39,16 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
 		// catch internal command
 		if(!strcmp(ecmd->argv[0], "cd")){
-			ecmd->argv[1][strlen(ecmd->argv[1]-1)] = '\0';
 			if (chdir(ecmd->argv[1]) < 0)
 				fprintf(stderr, "cannot cd to %s\n", (ecmd->argv[1]));
 		}
 		else if(!strcmp(ecmd->argv[0], "history")){
-
-		}
-
-		if(execvp(ecmd->argv[0], ecmd->argv) == -1)
+      tmp = &shell.hl;
+      while(cur=traverse_hl(tmp), cur){
+        tmp = NULL;
+        printf("%d: %s\n", cur->nb, cur->cmd);
+      }
+		}else if(execvp(ecmd->argv[0], ecmd->argv) == -1)
 			perror("exec");
     break;
 
@@ -89,7 +95,8 @@ runcmd(struct cmd *cmd)
 		handle_cmd(cmd);
 		break;
   }    
-  exit(1);
+  
+  return;
 }
 
 /* handle commands before actually runnning them */
@@ -111,11 +118,14 @@ void handle_cmd(struct cmd* cmd){
 	case ' ':
 		ecmd = (struct execcmd *)cmd;
 		// internal command
-		
-		// regular exec
-		if(fork1() == 0)
-			runcmd(cmd);
-		wait(&r);
+    if(!strcmp(ecmd->argv[0], "cd") || !strcmp(ecmd->argv[0], "history")){
+        runcmd(cmd);
+    }else{
+  		// regular exec
+  		if(fork1() == 0)
+  			runcmd(cmd);
+  		wait(&r);
+    }
 		break;
 
 	case '>':
@@ -154,6 +164,7 @@ void handle_cmd(struct cmd* cmd){
 		break;
 	}
 	
+  return;
 }
 
 int

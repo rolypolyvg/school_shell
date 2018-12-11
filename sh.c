@@ -6,16 +6,16 @@
 #include "cmd.h"
 #include "parser.h"
 #include "helper.h"
-#include "in_cmd.h"
 #include "history.h"
 
 void print_cmd(struct cmd* cmd);
 void handle_cmd(struct cmd* cmd);
 
+struct sh shell;
+
 int
 main(void)
 {
-	struct sh shell;
   	char *start, *end, *next, *tmp;
   	struct cmd *cmd;
 
