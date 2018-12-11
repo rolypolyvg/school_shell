@@ -85,6 +85,7 @@ runcmd(struct cmd *cmd)
 
 	case '&':
 	case ';':
+  case '(':
 		handle_cmd(cmd);
 		break;
   }    
