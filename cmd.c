@@ -106,6 +106,8 @@ void handle_cmd(struct cmd* cmd){
 	struct semicmd *semcmd;
 	struct parenthcmd *parcmd;
 	struct ampersandcmd *ampcmd;
+  char buf[200];
+  int index;
 
 	if(cmd == 0)
     return;
@@ -148,6 +150,10 @@ void handle_cmd(struct cmd* cmd){
 		ampcmd = (struct ampersandcmd *)cmd;
 		if(fork1() == 0){
 			handle_cmd(ampcmd->cur);
+      index = 0;
+      memset(buf, 0, sizeof(buf));
+      remake_cmd(index, buf, (ampcmd->cur));
+      buf[index] = 0;
 			exit(1);
 		}else{
 		  handle_cmd(ampcmd->next);
