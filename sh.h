@@ -8,4 +8,7 @@ struct sh{
 	struct hlist hl;
 };
 
+// block signals when starting shell
+void init_block_signals(void);
+
 #endif

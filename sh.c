@@ -21,6 +21,7 @@ main(void)
   struct cmd *cmd;
 
 	init_hl(&shell.hl, 10);
+	init_block_signals();	// blocking signals
 
   // Read and run input commands.
   while(getcmd(shell.buf, sizeof(shell.buf)) >= 0){
@@ -47,10 +48,10 @@ main(void)
 void init_block_signals(void){
 	sigset_t ss;	// signal set to block
 	
-	sigemptyset(&new);
-	sigaddset(&new, SIGINT);
-	sigaddset(&new, SIGQUIT);
-	sigprocmask(SIG_BLOCK, &new, (sigset_t*)NULL);
+	sigemptyset(&ss);
+	sigaddset(&ss, SIGINT);
+	sigaddset(&ss, SIGQUIT);
+	sigprocmask(SIG_BLOCK, &ss, (sigset_t*)NULL);
 }
 
 void print_cmd(struct cmd* cmd){
