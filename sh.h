@@ -10,6 +10,7 @@ struct sh{
 	struct hlist hl;
 
 	struct bglist bgl;
+	int end_cnt;
 };
 
 // block signals when starting shell

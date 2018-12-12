@@ -27,6 +27,8 @@ runcmd(struct cmd *cmd)
 	int left_pid, left_child_status, right_pid, right_child_status;	// for pipe command waitpid
   struct hnode *cur;
   struct hlist *tmp;
+  struct bg*bgcur;
+  int index;
 
   if(cmd == 0)
     exit(0);
@@ -49,7 +51,18 @@ runcmd(struct cmd *cmd)
         tmp = NULL;
         printf("%d: %s\n", cur->nb, cur->cmd);
       }
-		}else if(execvp(ecmd->argv[0], ecmd->argv) == -1)
+		}else if (!strcmp(ecmd->argv[0], "wait")){
+      while (shell.end_cnt < shell.bgl.count)
+        ;
+    }else if (!strcmp(ecmd->argv[0], "jobs")){
+      bgcur = shell.bgl.start;
+      index = 0;
+      while (bgcur){
+        print_bg_state(bgcur, shell.bgl.count, index);
+        bgcur = bgcur->next;
+        index++;
+      }
+    }else if(execvp(ecmd->argv[0], ecmd->argv) == -1)
 			perror("exec");
     break;
 
@@ -121,7 +134,10 @@ void handle_cmd(struct cmd* cmd){
 	case ' ':
 		ecmd = (struct execcmd *)cmd;
 		// internal command
-    if(!strcmp(ecmd->argv[0], "cd") || !strcmp(ecmd->argv[0], "history")){
+    if(!strcmp(ecmd->argv[0], "cd") ||
+     !strcmp(ecmd->argv[0], "history") ||
+      !strcmp(ecmd->argv[0], "wait") ||
+      !strcmp(ecmd->argv[0], "jobs")){
         runcmd(cmd);
     }else{
   		// regular exec

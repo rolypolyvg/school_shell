@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include "cmd.h"
 #include "background.h"
+#include "sh.h"
+
+extern struct sh shell;
 
 struct bg* new_bg(struct cmd *cmd, pid_t pid){
 	struct bg*ret;
@@ -104,6 +107,7 @@ void clean_bglist(struct bglist *bgl){
 			cur->state = DONE;
 			print_bg_state(cur, bgl->count, index);
 			free_bg(cur);
+			shell.end_cnt--;
 		}
 
 		index++;

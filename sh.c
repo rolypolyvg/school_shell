@@ -14,6 +14,7 @@
 
 void print_cmd(struct cmd* cmd);
 void handle_cmd(struct cmd* cmd);
+void chldhandler(int signo);
 
 struct sh shell;
 
@@ -24,11 +25,13 @@ main(void)
   	struct cmd *cmd;
   	int r;
   	pid_t pid;
-  	int is_changed;
+  	struct sigaction act;
 
+  	shell.end_cnt = 0;
   	init_bglist(&shell.bgl);
 	init_hl(&shell.hl, 10);
 	init_block_signals();	// blocking signals
+	signal(SIGCHLD, chldhandler);
 
   // Read and run input commands.
   while(getcmd(shell.buf, sizeof(shell.buf)) >= 0){
@@ -49,15 +52,7 @@ main(void)
 
 	free_cmd(cmd);
 
-	// wait builtin command
-	
-	is_changed = 0;
-	while (pid = waitpid(-1, &r, WNOHANG), pid > 0){
-		mark_end_bglist(&shell.bgl, pid);
-		is_changed = 1;
-	}
-
-	if (is_changed)
+	if (shell.end_cnt > 0)
 		clean_bglist(&shell.bgl);
   }
 
@@ -74,6 +69,17 @@ void init_block_signals(void){
 	sigaddset(&ss, SIGINT);
 	sigaddset(&ss, SIGQUIT);
 	sigprocmask(SIG_BLOCK, &ss, (sigset_t*)NULL);
+}
+
+void chldhandler(int signo){
+	pid_t pid;
+
+	while (pid = waitpid(-1, NULL, WNOHANG), pid > 0){
+		mark_end_bglist(&shell.bgl, pid);
+		shell.end_cnt++;
+	}
+
+	signal(SIGCHLD, chldhandler);
 }
 
 /* for debugging */
