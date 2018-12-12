@@ -9,6 +9,7 @@
 #include "cmd.h"
 #include "sh.h"
 #include "helper.h"
+#include "background.h"
 
 extern struct sh shell;
 
@@ -102,12 +103,12 @@ runcmd(struct cmd *cmd)
 /* handle commands before actually runnning them */
 void handle_cmd(struct cmd* cmd){
 	int r;
+  pid_t pid;
 	struct execcmd *ecmd;
 	struct semicmd *semcmd;
 	struct parenthcmd *parcmd;
 	struct ampersandcmd *ampcmd;
-  char buf[200];
-  int index;
+  struct bg*add;
 
 	if(cmd == 0)
     return;
@@ -148,14 +149,15 @@ void handle_cmd(struct cmd* cmd){
 
 	case '&':
 		ampcmd = (struct ampersandcmd *)cmd;
-		if(fork1() == 0){
+		if((pid = fork1()) == 0){
 			handle_cmd(ampcmd->cur);
-      index = 0;
-      memset(buf, 0, sizeof(buf));
-      remake_cmd(index, buf, (ampcmd->cur));
-      buf[index] = 0;
 			exit(1);
 		}else{
+      add = new_bg(ampcmd->cur, pid);
+      add_bglist(&shell.bgl, add);
+      printf("[%d] %d\n", add->order, add->pid);
+    // error after here
+      //(ls>a.txt)|cd .. > d.txt&
 		  handle_cmd(ampcmd->next);
     }
 		// no wait! (let the command run in the background)
@@ -275,6 +277,7 @@ void remake_cmd(int *index, char *buf, struct cmd *cmd){
     for (s=ecmd->argv; *s; s++){
       strcpy(buf+*index, *s);
       *index += strlen(*s);
+      buf[(*index)++] = ' ';
     }
 
     return;
@@ -282,9 +285,7 @@ void remake_cmd(int *index, char *buf, struct cmd *cmd){
     rcmd = (struct redircmd *) cmd;
 
     remake_cmd(index, buf, rcmd->cmd);
-    buf[*index++] = ' ';
-    buf[*index++] = cmd->type;
-    buf[*index++] = ' ';
+    buf[(*index)++] = cmd->type;
     strcpy(buf+*index, rcmd->file);
     *index += strlen(rcmd->file);
 
@@ -292,28 +293,26 @@ void remake_cmd(int *index, char *buf, struct cmd *cmd){
   }else if (cmd->type == '|'){
     pcmd = (struct pipecmd *) cmd;
     remake_cmd(index, buf, pcmd->left);
-    buf[*index++] = ' ';
-    buf[*index++] = cmd->type;
-    buf[*index++] = ' ';
+    buf[(*index)++] = (char)cmd->type;
     remake_cmd(index, buf, pcmd->right);
     return;
   }else if (cmd->type == ';'){
     scmd = (struct semicmd *) cmd;
     remake_cmd(index, buf, scmd->cur);
-    buf[*index++] = cmd->type;
+    buf[(*index)++] = cmd->type;
     remake_cmd(index, buf, scmd->next);
     return;
   }else if (cmd->type == '&'){
     acmd = (struct ampersandcmd *) cmd;
     remake_cmd(index, buf, acmd->cur);
-    buf[*index++] = cmd->type;
+    buf[(*index)++] = cmd->type;
     remake_cmd(index, buf, acmd->next);
     return;
   }else if (cmd->type == '('){
     ptcmd = (struct parenthcmd *) cmd;
-    buf[*index++] = '(';
+    buf[(*index)++] = '(';
     remake_cmd(index, buf, ptcmd->cmd);
-    buf[*index++] = ')';
+    buf[(*index)++] = ')';
   }else{
     printf("wrong\n");
     exit(1);
@@ -332,7 +331,7 @@ void free_cmd(struct cmd *cmd){
   char **s;
 
   if (cmd == NULL)
-    ;
+    return;
   else if (cmd->type == ' '){
     ecmd = (struct execcmd*) cmd;
     for (s=ecmd->argv; *s; s++)

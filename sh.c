@@ -1,12 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 #include "sh.h"
 #include "cmd.h"
 #include "parser.h"
 #include "helper.h"
 #include "history.h"
+#include "background.h"
 
 void print_cmd(struct cmd* cmd);
 void handle_cmd(struct cmd* cmd);
@@ -18,7 +21,11 @@ main(void)
 {
   	char *start, *end, *next, *tmp;
   	struct cmd *cmd;
+  	int r;
+  	pid_t pid;
+  	int is_changed;
 
+  	init_bglist(&shell.bgl);
 	init_hl(&shell.hl, 10);
 
   // Read and run input commands.
@@ -39,10 +46,22 @@ main(void)
 	handle_cmd(cmd);
 
 	free_cmd(cmd);
+
+	// wait builtin command
+	
+	is_changed = 0;
+	while (pid = waitpid(-1, &r, WNOHANG), pid > 0){
+		mark_end_bglist(&shell.bgl, pid);
+		is_changed = 1;
+	}
+
+	if (is_changed)
+		clean_bglist(&shell.bgl);
   }
 
   clean_hl(&shell.hl);
   exit(0);
+		
 }
 
 /* for debugging */
