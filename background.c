@@ -68,7 +68,7 @@ void add_bglist(struct bglist*bgl, struct bg*add){
 	return;
 }
 
-void mark_end_bglist(struct bglist *bgl, pid_t pid){
+int mark_end_bglist(struct bglist *bgl, pid_t pid){
 	struct bg*cur;
 
 	cur = bgl->start;
@@ -79,10 +79,10 @@ void mark_end_bglist(struct bglist *bgl, pid_t pid){
 	}
 
 	if (cur == NULL)
-		return;
+		return 0;
 
 	cur->state = END;
-	return;
+	return 1;
 }
 
 void clean_bglist(struct bglist *bgl){

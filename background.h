@@ -28,7 +28,7 @@ void free_bg(struct bg*fbg);
 void init_bglist(struct bglist* bgl);
 void free_bglist(struct bglist* bgl);
 void add_bglist(struct bglist*bgl, struct bg*add);
-void mark_end_bglist(struct bglist *bgl, pid_t pid);
+int mark_end_bglist(struct bglist *bgl, pid_t pid);
 void clean_bglist(struct bglist *bgl);
 void print_bg_state(struct bg*cur, int total, int index);
 #endif

@@ -75,8 +75,7 @@ void chldhandler(int signo){
 	pid_t pid;
 
 	while (pid = waitpid(-1, NULL, WNOHANG), pid > 0){
-		mark_end_bglist(&shell.bgl, pid);
-		shell.end_cnt++;
+		shell.end_cnt += mark_end_bglist(&shell.bgl, pid);
 	}
 
 	signal(SIGCHLD, chldhandler);
