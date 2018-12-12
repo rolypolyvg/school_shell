@@ -1,13 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-<<<<<<< HEAD
 #include <signal.h>
-#include <unistd.h>
-=======
 #include <sys/wait.h>
 #include <sys/types.h>
->>>>>>> runcmd
 
 #include "sh.h"
 #include "cmd.h"

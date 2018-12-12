@@ -150,7 +150,7 @@ void handle_cmd(struct cmd* cmd){
 	case '&':
 		ampcmd = (struct ampersandcmd *)cmd;
 
-		if((pid = fork1()) == 0){
+		if((pid = myfork()) == 0){
 			handle_cmd(ampcmd->cur);
 			exit(1);
 		}else{
